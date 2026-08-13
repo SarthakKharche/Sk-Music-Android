@@ -35,10 +35,10 @@ import com.example.skmusic.player.MusicPlaybackService
 fun PwaWebViewContainer(
     baseUrl: String,
     modifier: Modifier = Modifier,
-    onTokenExtracted: (String) -> Unit,
-    onWebViewCreated: (WebView) -> Unit = {}
+    onTokenExtracted: (String) -> Unit
 ) {
     val context = LocalContext.current
+    var webViewRef by remember { mutableStateOf<WebView?>(null) }
 
     AndroidView(
         factory = { ctx ->
@@ -59,38 +59,8 @@ fun PwaWebViewContainer(
                     WebView.setWebContentsDebuggingEnabled(true)
                 }
 
-                addJavascriptInterface(object {
-                    @android.webkit.JavascriptInterface
-                    fun onTrackChanged(json: String) {
-                        try {
-                            val obj = org.json.JSONObject(json)
-                            val id = obj.optString("id")
-                            val title = obj.optString("name")
-                            val artist = obj.optString("artistName")
-                            val artwork = obj.optString("artworkUrl")
-                            val track = com.example.skmusic.data.model.Track(
-                                id = id,
-                                name = title,
-                                artistName = artist,
-                                artworkUrl = artwork,
-                                album = com.example.skmusic.data.model.Album(id="", name="", imageUrl=artwork),
-                                artists = emptyList()
-                            )
-                            com.example.skmusic.player.MusicPlaybackService.instance?.playSingleTrack(track)
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                        }
-                    }
-                }, "AndroidBridge")
-
                 // Custom Chrome User-Agent so Google OAuth allows login directly inside WebView
                 settings.userAgentString = "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
-
-                webChromeClient = object : android.webkit.WebChromeClient() {
-                    override fun onPermissionRequest(request: android.webkit.PermissionRequest?) {
-                        request?.grant(request.resources)
-                    }
-                }
 
                 webViewClient = object : WebViewClient() {
                     override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
@@ -151,7 +121,7 @@ fun PwaWebViewContainer(
                     }
                 }
                 loadUrl(baseUrl)
-                onWebViewCreated(this)
+                webViewRef = this
             }
         },
         update = { webView ->
@@ -168,7 +138,6 @@ fun NativeMiniPlayerBar(
     onTogglePlayPause: () -> Unit,
     onNext: () -> Unit,
     onPrevious: () -> Unit,
-    onExpandFullscreen: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     AnimatedVisibility(
@@ -187,7 +156,6 @@ fun NativeMiniPlayerBar(
                     .fillMaxWidth()
                     .padding(horizontal = 8.dp, vertical = 4.dp)
                     .height(64.dp)
-                    .clickable { onExpandFullscreen() }
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,

@@ -67,17 +67,28 @@ app.use('/api/made-for-you', rateLimiter_1.rateLimiter, madeForYou_routes_1.defa
 app.use('/api/youtube-music', rateLimiter_1.rateLimiter, youtube_music_routes_1.default);
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
-// Serve static web app client assets - resolved relative to project root
-const clientDistPath = path_1.default.resolve(__dirname, '../../../client/dist');
-const fallbackClientDistPath = path_1.default.resolve(__dirname, '../../client/dist');
-const activeClientDist = fs_1.default.existsSync(clientDistPath) ? clientDistPath : fallbackClientDistPath;
-const hasClientDist = fs_1.default.existsSync(activeClientDist);
+// Candidate client dist paths depending on runtime folder structure
+const possibleDistPaths = [
+    path_1.default.resolve(__dirname, '../../client/dist'),
+    path_1.default.resolve(__dirname, '../../../client/dist'),
+    path_1.default.resolve(process.cwd(), '../client/dist'),
+    path_1.default.resolve(process.cwd(), 'client/dist'),
+    '/home/ubuntu/Sk-Music-Android/client/dist',
+];
+let activeClientDist = '';
+for (const p of possibleDistPaths) {
+    if (fs_1.default.existsSync(path_1.default.join(p, 'index.html'))) {
+        activeClientDist = p;
+        break;
+    }
+}
+const hasClientDist = activeClientDist !== '';
 if (hasClientDist) {
-    console.log(`[Server] Serving static client from: ${activeClientDist}`);
+    console.log(`[Server] ✅ Serving static web client from: ${activeClientDist}`);
     app.use(express_1.default.static(activeClientDist));
 }
 else {
-    console.warn(`[Server] WARNING: Static client build not found at ${clientDistPath} or ${fallbackClientDistPath}`);
+    console.warn(`[Server] ⚠️ WARNING: client/dist/index.html not found in candidate paths:`, possibleDistPaths);
 }
 // API Health Check
 app.get('/health', (_req, res) => {

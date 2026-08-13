@@ -14,7 +14,7 @@ const crypto_js_1 = __importDefault(require("crypto-js"));
 passport_1.default.use(new passport_google_oauth20_1.Strategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: process.env.GOOGLE_REDIRECT_URI || '/api/auth/google/callback',
+    callbackURL: process.env.GOOGLE_REDIRECT_URI || 'https://sk-music-xi.vercel.app/api/auth/google/callback',
 }, async (accessToken, refreshToken, profile, done) => {
     try {
         const db = (0, firebase_1.getFirestore)();

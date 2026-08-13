@@ -92,26 +92,50 @@ router.get('/saavn-search', async (req, res) => {
         try {
             const cleanSearch = rawQuery.replace(/[\(\)\[\]"'\-_]/g, ' ').replace(/\s+/g, ' ').trim();
             console.log(`[AUDIO DOWNLOAD] Resolving 320kbps audio CDN stream for query: ${cleanSearch}`);
-            const searchRes = await axios_1.default.get(`https://jiosaavn-api-private.vercel.app/search/songs?q=${encodeURIComponent(cleanSearch)}`, { timeout: 6000 });
-            const results = searchRes.data?.data?.results || searchRes.data?.results;
+            const saavnAPIs = [
+                `https://jiosaavn-api-private.vercel.app/search/songs?q=${encodeURIComponent(cleanSearch)}`,
+                `https://saavn.dev/api/search/songs?query=${encodeURIComponent(cleanSearch)}`,
+                `https://jiosavan-api.vercel.app/search/songs?q=${encodeURIComponent(cleanSearch)}`,
+            ];
+            let results = [];
+            for (const apiEndpoint of saavnAPIs) {
+                try {
+                    const searchRes = await axios_1.default.get(apiEndpoint, { timeout: 4000 });
+                    results = searchRes.data?.data?.results || searchRes.data?.results || searchRes.data?.data || [];
+                    if (Array.isArray(results) && results.length > 0)
+                        break;
+                }
+                catch { }
+            }
             if (results && results.length > 0) {
-                const songId = results[0].id;
-                const detailsRes = await axios_1.default.get(`https://jiosaavn-api-private.vercel.app/song?id=${songId}`, { timeout: 6000 });
-                const songData = detailsRes.data?.data?.songs?.[0] || detailsRes.data?.songs?.[0];
+                const firstSong = results[0];
                 let streamUrl = '';
-                if (songData?.downloadUrl && Array.isArray(songData.downloadUrl)) {
-                    const sorted = songData.downloadUrl.sort((a, b) => (parseInt(b.quality || '0', 10)) - (parseInt(a.quality || '0', 10)));
+                if (firstSong.downloadUrl && Array.isArray(firstSong.downloadUrl)) {
+                    const sorted = firstSong.downloadUrl.sort((a, b) => (parseInt(b.quality || '0', 10)) - (parseInt(a.quality || '0', 10)));
                     streamUrl = sorted[0]?.link || sorted[0]?.url || '';
                 }
-                else if (songData?.image) {
-                    // Check downloadUrl structure
-                    const mediaUrl = songData.media_url || songData.url;
-                    if (mediaUrl && mediaUrl.includes('saavncdn'))
-                        streamUrl = mediaUrl;
+                else {
+                    const songId = firstSong.id;
+                    for (const apiEndpoint of saavnAPIs) {
+                        try {
+                            const detailBase = apiEndpoint.includes('saavn.dev')
+                                ? `https://saavn.dev/api/songs?id=${songId}`
+                                : `https://jiosaavn-api-private.vercel.app/song?id=${songId}`;
+                            const detailsRes = await axios_1.default.get(detailBase, { timeout: 4000 });
+                            const songData = detailsRes.data?.data?.songs?.[0] || detailsRes.data?.songs?.[0] || detailsRes.data?.data?.[0];
+                            if (songData?.downloadUrl && Array.isArray(songData.downloadUrl)) {
+                                const sorted = songData.downloadUrl.sort((a, b) => (parseInt(b.quality || '0', 10)) - (parseInt(a.quality || '0', 10)));
+                                streamUrl = sorted[0]?.link || sorted[0]?.url || '';
+                                if (streamUrl)
+                                    break;
+                            }
+                        }
+                        catch { }
+                    }
                 }
                 // Target 160kbps optimized AAC/MP4 stream URL for lightweight fast downloads (~3MB vs 10.5MB)
-                if (!streamUrl) {
-                    const rawStr = JSON.stringify(detailsRes.data);
+                if (!streamUrl && firstSong) {
+                    const rawStr = JSON.stringify(firstSong);
                     const matches = rawStr.match(/https:\/\/aac\.saavncdn\.com\/[^\s"']+/g);
                     if (matches && matches.length > 0) {
                         // Find 160kbps or 96kbps match for compact download size (~3MB)
