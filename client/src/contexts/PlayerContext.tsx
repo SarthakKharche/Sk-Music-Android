@@ -303,6 +303,20 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       // Finalise tracking for the previous track before switching
       finaliseTracking();
 
+      // Notify native Android bridge for media notification
+      if (typeof window !== 'undefined' && (window as any).AndroidBridge) {
+        try {
+          (window as any).AndroidBridge.onTrackChanged(JSON.stringify({
+            id: track.id,
+            name: track.name,
+            artistName: track.artists?.map(a => a.name).join(', ') || 'Unknown Artist',
+            artworkUrl: (track.album as any)?.imageUrl || (track.album as any)?.images?.[0]?.url || ''
+          }));
+        } catch (e) {
+          console.warn('AndroidBridge notify error:', e);
+        }
+      }
+
       // Update current track immediately for UI feedback
       setState((prev) => ({
         ...prev,

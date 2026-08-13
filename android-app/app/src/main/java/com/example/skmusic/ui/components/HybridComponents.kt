@@ -59,6 +59,30 @@ fun PwaWebViewContainer(
                     WebView.setWebContentsDebuggingEnabled(true)
                 }
 
+                addJavascriptInterface(object {
+                    @android.webkit.JavascriptInterface
+                    fun onTrackChanged(json: String) {
+                        try {
+                            val obj = org.json.JSONObject(json)
+                            val id = obj.optString("id")
+                            val title = obj.optString("name")
+                            val artist = obj.optString("artistName")
+                            val artwork = obj.optString("artworkUrl")
+                            val track = com.example.skmusic.data.model.Track(
+                                id = id,
+                                name = title,
+                                artistName = artist,
+                                artworkUrl = artwork,
+                                album = com.example.skmusic.data.model.Album(id="", name="", imageUrl=artwork),
+                                artists = emptyList()
+                            )
+                            com.example.skmusic.player.MusicPlaybackService.instance?.playSingleTrack(track)
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                }, "AndroidBridge")
+
                 // Custom Chrome User-Agent so Google OAuth allows login directly inside WebView
                 settings.userAgentString = "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
 
