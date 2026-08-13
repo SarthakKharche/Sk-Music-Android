@@ -72,9 +72,23 @@ app.use('/api/radio', rateLimiter, radioRoutes);
 app.use('/api/made-for-you', rateLimiter, madeForYouRoutes);
 app.use('/api/youtube-music', rateLimiter, youtubeMusicRoutes);
 
+import path from 'path';
+
+// Serve static web app client assets
+const clientDistPath = path.join(__dirname, '../../client/dist');
+app.use(express.static(clientDistPath));
+
 // API Health Check
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'sk-music-android-server' });
+});
+
+// Fallback all non-API GET requests to web app index.html for SPA routing
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api/') || req.path === '/health') {
+    return next();
+  }
+  res.sendFile(path.join(clientDistPath, 'index.html'));
 });
 
 // Handle uncaught errors

@@ -6,7 +6,6 @@ import { useMadeForYou } from '../contexts/MadeForYouContext';
 import { indexedDB } from '../services/indexedDB';
 import api from '../utils/api';
 import { FiMusic, FiPlay, FiClock, FiZap, FiHeadphones, FiRefreshCw } from 'react-icons/fi';
-import { SiSpotify } from 'react-icons/si';
 import { MdCategory } from 'react-icons/md';
 import type { Playlist, Track, MadeForYouPlaylist, MadeForYouTrackEntry } from '../types';
 import { useNavigate } from 'react-router-dom';
@@ -58,7 +57,7 @@ function mfyEntryToTrack(entry: MadeForYouTrackEntry, playlistId: string, userId
 }
 
 const HomePage: React.FC = () => {
-  const { user, connectSpotify } = useAuth();
+  const { user } = useAuth();
   const { syncPlaylists, isOffline } = useOffline();
   const { playTrack } = usePlayer();
   const {
@@ -134,12 +133,14 @@ const HomePage: React.FC = () => {
     setLoading(false);
 
     // Load online data in background if connected
-    if (!isOffline && user?.spotifyConnected) {
-      // Sync playlists in background
-      syncPlaylists()
-        .then(() => indexedDB.getPlaylists())
-        .then(setPlaylists)
-        .catch(err => console.error('Failed to sync playlists:', err));
+    if (!isOffline) {
+      if (user?.spotifyConnected) {
+        // Sync playlists in background
+        syncPlaylists()
+          .then(() => indexedDB.getPlaylists())
+          .then(setPlaylists)
+          .catch(err => console.error('Failed to sync playlists:', err));
+      }
 
       // Load curated sections if not already loaded
       if (!hasLoadedSections.current || categorySections.length === 0) {
@@ -199,13 +200,7 @@ const HomePage: React.FC = () => {
     }
   };
 
-  const handleConnectSpotify = async () => {
-    try {
-      await connectSpotify();
-    } catch (error) {
-      console.error('Failed to connect Spotify:', error);
-    }
-  };
+
 
   // Auto-import Made For You playlists on first visit when Spotify is connected
   useEffect(() => {
@@ -315,28 +310,7 @@ const HomePage: React.FC = () => {
     );
   }
 
-  if (!user?.spotifyConnected) {
-    return (
-      <div className="flex items-center justify-center h-full p-8 bg-gradient-to-b from-[#1e3264] to-spotify-black">
-        <div className="text-center max-w-md">
-          <SiSpotify className="text-spotify-green text-6xl mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-white mb-2">
-            Connect Your Spotify Account
-          </h2>
-          <p className="text-spotify-lightgray mb-6">
-            Connect your Spotify account to sync your playlists and start listening.
-          </p>
-          <button 
-            onClick={handleConnectSpotify} 
-            className="bg-spotify-green text-black font-bold py-3 px-8 rounded-full hover:scale-105 transition-transform"
-          >
-            <SiSpotify className="inline mr-2" />
-            Connect Spotify
-          </button>
-        </div>
-      </div>
-    );
-  }
+
 
   return (
     <div className="min-h-full starfield text-white pb-32">
