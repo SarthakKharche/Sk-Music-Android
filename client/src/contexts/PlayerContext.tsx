@@ -267,6 +267,20 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       setState((prev) => ({ ...prev, isPlaying: true }));
       if (state.currentTrack) {
         updateMediaSession(state.currentTrack, true, audio.duration, audio.currentTime);
+        // Post native Android media notification via JavascriptInterface
+        if (typeof window !== 'undefined' && (window as any).AndroidPlayer) {
+          try {
+            const coverUrl = (state.currentTrack.album as any)?.imageUrl || (state.currentTrack.album as any)?.images?.[0]?.url || '';
+            (window as any).AndroidPlayer.playTrackNative(JSON.stringify({
+              id: state.currentTrack.id,
+              name: state.currentTrack.name,
+              artistName: state.currentTrack.artists ? state.currentTrack.artists.map((a: any) => a.name).join(', ') : 'SK Music',
+              artworkUrl: coverUrl,
+              audioUrl: audio.src,
+              durationMs: (audio.duration || 180) * 1000
+            }));
+          } catch {}
+        }
       }
     });
 
