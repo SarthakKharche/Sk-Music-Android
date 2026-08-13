@@ -70,13 +70,13 @@ const Layout: React.FC = () => {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex overflow-hidden relative pb-16 md:pb-0">
+      <div className="flex-1 flex overflow-hidden relative mb-16 md:mb-0">
         {/* Desktop & Mobile Responsive Sidebar Drawer */}
         <Sidebar />
 
         {/* Content Area */}
-        <main className="flex-1 overflow-y-auto relative bg-[#121212]">
-          <div className="relative w-full h-full">
+        <main className="flex-1 overflow-y-auto relative bg-[#121212] min-h-full">
+          <div className="relative w-full min-h-full pb-20">
             <Outlet />
           </div>
         </main>
