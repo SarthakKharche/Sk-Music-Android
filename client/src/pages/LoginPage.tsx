@@ -21,13 +21,13 @@ const LoginPage: React.FC = () => {
     : '/api/auth/google';
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-[#0a0d14] via-[#121824] to-[#05130b] flex flex-col items-center justify-center p-4 sm:p-6 text-white overflow-y-auto pb-24">
+    <div className="h-screen w-screen bg-gradient-to-br from-[#0a0d14] via-[#121824] to-[#05130b] flex items-center justify-center p-4 text-white overflow-y-auto">
       {/* Dynamic Background Glow Spheres */}
       <div className="absolute -top-32 -left-32 w-96 h-96 bg-spotify-green/20 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
 
       {/* Main Glassmorphic Card Container */}
-      <div className="max-w-md w-full glass-panel p-6 sm:p-10 relative z-10 border border-white/10 shadow-2xl backdrop-blur-2xl bg-black/40 rounded-3xl my-auto">
+      <div className="max-w-md w-full glass-panel p-6 sm:p-8 relative z-10 border border-white/10 shadow-2xl backdrop-blur-2xl bg-black/40 rounded-3xl">
         {/* Header Logo & Title */}
         <div className="flex flex-col items-center text-center mb-8">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-spotify-green to-emerald-400 flex items-center justify-center shadow-lg shadow-spotify-green/20 mb-4 transform hover:scale-105 transition-transform duration-300">
