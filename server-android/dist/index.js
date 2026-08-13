@@ -66,9 +66,13 @@ app.use('/api/radio', rateLimiter_1.rateLimiter, radio_routes_1.default);
 app.use('/api/made-for-you', rateLimiter_1.rateLimiter, madeForYou_routes_1.default);
 app.use('/api/youtube-music', rateLimiter_1.rateLimiter, youtube_music_routes_1.default);
 const path_1 = __importDefault(require("path"));
+const fs_1 = __importDefault(require("fs"));
 // Serve static web app client assets
 const clientDistPath = path_1.default.join(__dirname, '../../client/dist');
-app.use(express_1.default.static(clientDistPath));
+const hasClientDist = fs_1.default.existsSync(clientDistPath);
+if (hasClientDist) {
+    app.use(express_1.default.static(clientDistPath));
+}
 // API Health Check
 app.get('/health', (_req, res) => {
     res.json({ status: 'ok', service: 'sk-music-android-server' });
@@ -78,7 +82,10 @@ app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api/') || req.path === '/health') {
         return next();
     }
-    res.sendFile(path_1.default.join(clientDistPath, 'index.html'));
+    if (hasClientDist) {
+        return res.sendFile(path_1.default.join(clientDistPath, 'index.html'));
+    }
+    res.status(404).send('Web app client build missing. Run npm run build in client directory.');
 });
 // Handle uncaught errors
 process.on('uncaughtException', (error) => {

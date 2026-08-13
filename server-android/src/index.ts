@@ -73,10 +73,15 @@ app.use('/api/made-for-you', rateLimiter, madeForYouRoutes);
 app.use('/api/youtube-music', rateLimiter, youtubeMusicRoutes);
 
 import path from 'path';
+import fs from 'fs';
 
 // Serve static web app client assets
 const clientDistPath = path.join(__dirname, '../../client/dist');
-app.use(express.static(clientDistPath));
+const hasClientDist = fs.existsSync(clientDistPath);
+
+if (hasClientDist) {
+  app.use(express.static(clientDistPath));
+}
 
 // API Health Check
 app.get('/health', (_req, res) => {
@@ -88,7 +93,10 @@ app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api/') || req.path === '/health') {
     return next();
   }
-  res.sendFile(path.join(clientDistPath, 'index.html'));
+  if (hasClientDist) {
+    return res.sendFile(path.join(clientDistPath, 'index.html'));
+  }
+  res.status(404).send('Web app client build missing. Run npm run build in client directory.');
 });
 
 // Handle uncaught errors
