@@ -11,9 +11,14 @@ const AuthCallback: React.FC = () => {
 
     if (token) {
       localStorage.setItem('authToken', token);
-      login(token).catch(console.warn).finally(() => {
-        window.location.href = '/';
-      });
+      login(token)
+        .then(() => {
+          window.location.href = '/';
+        })
+        .catch(() => {
+          localStorage.removeItem('authToken');
+          window.location.href = '/login';
+        });
     } else {
       window.location.href = '/login';
     }
