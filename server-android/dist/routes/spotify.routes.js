@@ -266,6 +266,27 @@ router.get('/search/playlists', auth_middleware_1.isAuthenticated, async (req, r
                 console.warn('[Search] Spotify playlist search failed:', spotifyError.message);
             }
         }
+        // Fallback to YouTube Music search if Spotify playlists are empty
+        if (playlists.length === 0) {
+            try {
+                const { youtubeMusicService } = await Promise.resolve().then(() => __importStar(require('../services/youtube-music.service')));
+                const ytResults = await youtubeMusicService.searchPlaylists(q);
+                playlists = ytResults.map((item) => ({
+                    id: item.id,
+                    name: item.title,
+                    description: item.subtitle,
+                    imageUrl: item.thumbnail,
+                    trackCount: 20,
+                    owner: { id: 'youtube', name: 'YouTube Music' },
+                    isSpotifyPlaylist: false,
+                }));
+                total = playlists.length;
+                hasMore = false;
+            }
+            catch (ytErr) {
+                console.warn('[Search] YouTube Music playlist search fallback failed:', ytErr);
+            }
+        }
         return res.json({
             playlists,
             total,
