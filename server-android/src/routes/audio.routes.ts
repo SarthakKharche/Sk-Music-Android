@@ -104,8 +104,8 @@ router.get('/saavn-search', async (req: Request, res: Response) => {
         }
 
         // Target 160kbps optimized AAC/MP4 stream URL for lightweight fast downloads (~3MB vs 10.5MB)
-        if (!streamUrl) {
-          const rawStr = JSON.stringify(detailsRes.data);
+        if (!streamUrl && firstSong) {
+          const rawStr = JSON.stringify(firstSong);
           const matches = rawStr.match(/https:\/\/aac\.saavncdn\.com\/[^\s"']+/g);
           if (matches && matches.length > 0) {
             // Find 160kbps or 96kbps match for compact download size (~3MB)
