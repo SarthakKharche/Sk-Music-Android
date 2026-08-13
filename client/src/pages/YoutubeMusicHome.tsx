@@ -564,9 +564,9 @@ const YoutubeMusicHome: React.FC = () => {
     );
   }
 
-  if (error) {
+  if (error && shelves.length === 0) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-white">
+      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-white min-h-[50vh]">
         <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 border border-red-500/20 mb-4 animate-bounce">
           <FiMusic size={24} />
         </div>

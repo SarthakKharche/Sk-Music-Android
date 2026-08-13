@@ -27,7 +27,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (token) {
         try {
           const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 8000);
+          const timeout = setTimeout(() => controller.abort(), 3000);
           
           const response = await api.get<User>('/auth/me', {
             signal: controller.signal,

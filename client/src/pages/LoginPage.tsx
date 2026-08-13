@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiMusic } from 'react-icons/fi';
+import { FiMusic, FiCheckCircle, FiRadio, FiDownloadCloud, FiZap } from 'react-icons/fi';
 import { FcGoogle } from 'react-icons/fc';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -14,51 +14,67 @@ const LoginPage: React.FC = () => {
       navigate('/', { replace: true });
     }
   }, [user, navigate]);
+
+  // Ensure redirect goes directly to full API URL if needed or relative path
+  const googleAuthUrl = import.meta.env.VITE_API_URL 
+    ? `${import.meta.env.VITE_API_URL.replace(/\/+$/, '')}/auth/google`
+    : '/api/auth/google';
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-spotify-black via-spotify-dark to-spotify-green flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-spotify-black rounded-2xl shadow-2xl p-8">
-        {/* Logo */}
-        <div className="flex flex-col items-center mb-8">
-          <FiMusic className="text-spotify-green text-6xl mb-4" />
-          <h1 className="text-4xl font-bold text-white mb-2">SK Music</h1>
-          <p className="text-spotify-lightgray text-center">
-            Offline-first music streaming PWA
+    <div className="min-h-screen w-full bg-gradient-to-br from-[#0a0d14] via-[#121824] to-[#05130b] flex items-center justify-center p-4 sm:p-6 text-white relative overflow-hidden">
+      {/* Dynamic Background Glow Spheres */}
+      <div className="absolute -top-32 -left-32 w-96 h-96 bg-spotify-green/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
+
+      {/* Main Glassmorphic Card Container */}
+      <div className="max-w-md w-full glass-panel p-8 sm:p-10 relative z-10 border border-white/10 shadow-2xl backdrop-blur-2xl bg-black/40 rounded-3xl">
+        {/* Header Logo & Title */}
+        <div className="flex flex-col items-center text-center mb-8">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-spotify-green to-emerald-400 flex items-center justify-center shadow-lg shadow-spotify-green/20 mb-4 transform hover:scale-105 transition-transform duration-300">
+            <FiMusic className="text-black text-3xl font-bold" />
+          </div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-white mb-2">
+            Welcome to <span className="text-spotify-green">SK Music</span>
+          </h1>
+          <p className="text-spotify-lightgray text-sm max-w-xs">
+            Your high-performance, offline-first music streaming experience.
           </p>
         </div>
 
-        {/* Features */}
-        <div className="space-y-3 mb-8">
-          <div className="flex items-start gap-3 text-sm text-spotify-lightgray">
-            <span className="text-spotify-green">✓</span>
-            <span>Stream your Spotify playlists</span>
+        {/* Feature Highlights */}
+        <div className="space-y-3.5 mb-8 bg-white/5 p-4 rounded-2xl border border-white/5">
+          <div className="flex items-center gap-3 text-sm text-gray-200">
+            <FiZap className="text-spotify-green flex-shrink-0" size={18} />
+            <span>Stream Spotify & YouTube Music seamless</span>
           </div>
-          <div className="flex items-start gap-3 text-sm text-spotify-lightgray">
-            <span className="text-spotify-green">✓</span>
+          <div className="flex items-center gap-3 text-sm text-gray-200">
+            <FiDownloadCloud className="text-spotify-green flex-shrink-0" size={18} />
             <span>Download tracks for offline listening</span>
           </div>
-          <div className="flex items-start gap-3 text-sm text-spotify-lightgray">
-            <span className="text-spotify-green">✓</span>
-            <span>Works offline with cached content</span>
+          <div className="flex items-center gap-3 text-sm text-gray-200">
+            <FiRadio className="text-spotify-green flex-shrink-0" size={18} />
+            <span>Smart radio & personal recommendations</span>
           </div>
-          <div className="flex items-start gap-3 text-sm text-spotify-lightgray">
-            <span className="text-spotify-green">✓</span>
-            <span>Sync across all your devices</span>
+          <div className="flex items-center gap-3 text-sm text-gray-200">
+            <FiCheckCircle className="text-spotify-green flex-shrink-0" size={18} />
+            <span>Sync library across all mobile & web devices</span>
           </div>
         </div>
 
-        {/* Login Button */}
+        {/* Google OAuth Login Button */}
         <a
-          href="/api/auth/google"
-          className="w-full bg-white text-spotify-black font-semibold py-3 px-6 rounded-full 
-                     hover:bg-gray-100 transition-colors flex items-center justify-center gap-3"
+          href={googleAuthUrl}
+          className="w-full bg-white text-black font-semibold py-3.5 px-6 rounded-2xl 
+                     hover:bg-gray-100 hover:shadow-lg hover:shadow-white/10 active:scale-[0.98] transition-all duration-200 
+                     flex items-center justify-center gap-3 text-base shadow-md cursor-pointer decoration-none"
         >
           <FcGoogle size={24} />
           <span>Continue with Google</span>
         </a>
 
-        {/* Legal Notice */}
-        <p className="text-xs text-spotify-lightgray text-center mt-6">
-          For personal and educational use only. By logging in, you agree to our terms of service.
+        {/* Footer Note */}
+        <p className="text-xs text-spotify-lightgray text-center mt-6 leading-relaxed">
+          By signing in, you agree to our Terms of Service. Designed for personal and educational music streaming.
         </p>
       </div>
     </div>

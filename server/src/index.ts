@@ -72,19 +72,19 @@ app.use('/api/radio', rateLimiter, radioRoutes);
 app.use('/api/made-for-you', rateLimiter, madeForYouRoutes);
 app.use('/api/youtube-music', rateLimiter, youtubeMusicRoutes);
 
-// Health check
-app.get('/health', (req, res) => {
-  void req;
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
+import path from 'path';
 
-// Debug test endpoint
-app.get('/api/test', (req, res) => {
-  void req;
-  res.json({ message: 'API is working', timestamp: new Date().toISOString() });
-});
+// Serve static React web app client assets
+const clientDistPath = path.join(__dirname, '../../client/dist');
+app.use(express.static(clientDistPath));
 
-// Routes mounted above
+// Fallback all non-API GET requests to React index.html for SPA routing
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api/') || req.path === '/health') {
+    return next();
+  }
+  res.sendFile(path.join(clientDistPath, 'index.html'));
+});
 
 // Handle uncaught errors
 process.on('uncaughtException', (error) => {
