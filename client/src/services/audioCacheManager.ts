@@ -77,10 +77,10 @@ class AudioCacheManager {
     const primaryArtist = track.artists?.[0]?.name?.split(',')[0]?.split('&')[0]?.trim() || '';
     const searchQuery = encodeURIComponent(`${cleanTitle} ${primaryArtist}`.trim());
 
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'http://13.203.231.53:5000';
-    const streamUrl = `${origin}/api/audio/saavn-search?query=${searchQuery}&trackId=${encodeURIComponent(track.id)}`;
+    const baseUrl = api.defaults.baseURL || '/api';
+    const streamUrl = `${baseUrl}/audio/saavn-search?query=${searchQuery}&trackId=${encodeURIComponent(track.id)}`;
 
-    console.log('[AUDIO URL] Returning native HTML5 audio stream URL for background playback:', cleanTitle, streamUrl);
+    console.log('[AUDIO URL] Returning native HTML5 audio stream URL for background playback:', cleanTitle);
     return streamUrl;
   }
 
