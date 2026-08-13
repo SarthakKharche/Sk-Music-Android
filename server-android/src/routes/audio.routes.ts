@@ -119,17 +119,17 @@ router.get('/saavn-search', async (req: Request, res: Response) => {
           res.setHeader('Access-Control-Allow-Origin', '*');
           res.setHeader('Access-Control-Allow-Headers', '*');
           res.setHeader('Accept-Ranges', 'bytes');
-          res.setHeader('Content-Type', audioStreamRes.headers['content-type'] || 'audio/mp4');
+          res.setHeader('Content-Type', String(audioStreamRes.headers['content-type'] || 'audio/mp4'));
 
           if (audioStreamRes.headers['content-range']) {
-            res.setHeader('Content-Range', audioStreamRes.headers['content-range']);
+            res.setHeader('Content-Range', String(audioStreamRes.headers['content-range']));
             res.status(206);
           } else {
             res.status(200);
           }
 
           if (audioStreamRes.headers['content-length']) {
-            res.setHeader('Content-Length', audioStreamRes.headers['content-length']);
+            res.setHeader('Content-Length', String(audioStreamRes.headers['content-length']));
           }
           return audioStreamRes.data.pipe(res);
         }
@@ -175,7 +175,7 @@ router.get('/saavn-search', async (req: Request, res: Response) => {
           if (streamRes.status >= 200 && streamRes.status < 300) {
             res.setHeader('Content-Type', 'audio/mp4');
             if (streamRes.headers['content-length']) {
-              res.setHeader('Content-Length', streamRes.headers['content-length']);
+              res.setHeader('Content-Length', String(streamRes.headers['content-length']));
             }
             return streamRes.data.pipe(res);
           }
@@ -352,7 +352,7 @@ router.get('/download/:youtubeId', async (req, res) => {
           res.setHeader('Content-Type', 'audio/mp4');
           res.setHeader('X-Audio-Format', 'mp4');
           if (streamRes.headers['content-length']) {
-            res.setHeader('Content-Length', streamRes.headers['content-length']);
+            res.setHeader('Content-Length', String(streamRes.headers['content-length']));
           }
           streamRes.data.pipe(res);
           return;
