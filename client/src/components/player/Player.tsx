@@ -253,21 +253,26 @@ const Player: React.FC = () => {
     };
   }, [isDraggingProgress, isDraggingVolume, duration, isFullscreen, seek, setPlayerVolume]);
 
-  // Fullscreen handler
+  // Fullscreen handler (supports state-based toggle when browser Fullscreen API fails/unsupported)
   const toggleFullscreen = async () => {
-    if (!playerRef.current) return;
-    
-    try {
-      if (!document.fullscreenElement) {
+    if (isFullscreen) {
+      if (document.fullscreenElement) {
+        try { await document.exitFullscreen(); } catch {}
+      }
+      setIsFullscreen(false);
+      return;
+    }
+
+    if (playerRef.current && playerRef.current.requestFullscreen) {
+      try {
         await playerRef.current.requestFullscreen();
         setIsFullscreen(true);
-      } else {
-        await document.exitFullscreen();
-        setIsFullscreen(false);
+        return;
+      } catch {
+        // Fallback to React state fullscreen for mobile WebViews
       }
-    } catch (err) {
-      console.error('Fullscreen error:', err);
     }
+    setIsFullscreen(true);
   };
 
   const getHighResImageUrl = (url?: string | null) => {
