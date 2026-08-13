@@ -211,23 +211,10 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         title: track.name,
         artist: track.artists ? track.artists.map((a) => a.name).join(', ') : 'SK Music',
         album: track.album?.name || 'SK Music',
-        artwork: coverUrl ? [{ src: coverUrl, sizes: '512x512', type: 'image/png' }] : [],
+        artwork: coverUrl ? [{ src: coverUrl, sizes: '300x300', type: 'image/jpeg' }] : [],
       });
 
       navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
-
-      // Attach action handlers for OS lockscreen & notification media controls
-      try {
-        navigator.mediaSession.setActionHandler('play', () => resume());
-        navigator.mediaSession.setActionHandler('pause', () => pause());
-        navigator.mediaSession.setActionHandler('previoustrack', () => previous());
-        navigator.mediaSession.setActionHandler('nexttrack', () => next());
-        navigator.mediaSession.setActionHandler('seekto', (details) => {
-          if (details.seekTime !== undefined && details.seekTime !== null) {
-            seek(details.seekTime);
-          }
-        });
-      } catch {}
 
       if (durationSec > 0 && 'setPositionState' in navigator.mediaSession) {
         try {
