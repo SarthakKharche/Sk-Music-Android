@@ -9,7 +9,6 @@ import Layout from './components/layout/Layout';
 import LoginPage from './pages/LoginPage';
 import AuthCallback from './pages/AuthCallback';
 import SpotifyCallback from './pages/SpotifyCallback';
-import HomePage from './pages/HomePage';
 import PlaylistPage from './pages/PlaylistPage';
 import SpotifyPlaylistPage from './pages/SpotifyPlaylistPage';
 import SearchPage from './pages/SearchPage';
@@ -43,7 +42,7 @@ function App() {
                   </ProtectedRoute>
                 }
               >
-                <Route index element={<HomePage />} />
+                <Route index element={<YoutubeMusicHome />} />
                 <Route path="playlist/:playlistId" element={<PlaylistPage />} />
                 <Route path="spotify-playlist/:playlistId" element={<SpotifyPlaylistPage />} />
                 <Route path="search" element={<SearchPage />} />
