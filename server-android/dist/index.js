@@ -67,11 +67,17 @@ app.use('/api/made-for-you', rateLimiter_1.rateLimiter, madeForYou_routes_1.defa
 app.use('/api/youtube-music', rateLimiter_1.rateLimiter, youtube_music_routes_1.default);
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
-// Serve static web app client assets
-const clientDistPath = path_1.default.join(__dirname, '../../client/dist');
-const hasClientDist = fs_1.default.existsSync(clientDistPath);
+// Serve static web app client assets - resolved relative to project root
+const clientDistPath = path_1.default.resolve(__dirname, '../../../client/dist');
+const fallbackClientDistPath = path_1.default.resolve(__dirname, '../../client/dist');
+const activeClientDist = fs_1.default.existsSync(clientDistPath) ? clientDistPath : fallbackClientDistPath;
+const hasClientDist = fs_1.default.existsSync(activeClientDist);
 if (hasClientDist) {
-    app.use(express_1.default.static(clientDistPath));
+    console.log(`[Server] Serving static client from: ${activeClientDist}`);
+    app.use(express_1.default.static(activeClientDist));
+}
+else {
+    console.warn(`[Server] WARNING: Static client build not found at ${clientDistPath} or ${fallbackClientDistPath}`);
 }
 // API Health Check
 app.get('/health', (_req, res) => {
@@ -83,7 +89,7 @@ app.get('*', (req, res, next) => {
         return next();
     }
     if (hasClientDist) {
-        return res.sendFile(path_1.default.join(clientDistPath, 'index.html'));
+        return res.sendFile(path_1.default.join(activeClientDist, 'index.html'));
     }
     res.status(404).send('Web app client build missing. Run npm run build in client directory.');
 });

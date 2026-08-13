@@ -75,12 +75,17 @@ app.use('/api/youtube-music', rateLimiter, youtubeMusicRoutes);
 import path from 'path';
 import fs from 'fs';
 
-// Serve static web app client assets
-const clientDistPath = path.join(__dirname, '../../client/dist');
-const hasClientDist = fs.existsSync(clientDistPath);
+// Serve static web app client assets - resolved relative to project root
+const clientDistPath = path.resolve(__dirname, '../../../client/dist');
+const fallbackClientDistPath = path.resolve(__dirname, '../../client/dist');
+const activeClientDist = fs.existsSync(clientDistPath) ? clientDistPath : fallbackClientDistPath;
+const hasClientDist = fs.existsSync(activeClientDist);
 
 if (hasClientDist) {
-  app.use(express.static(clientDistPath));
+  console.log(`[Server] Serving static client from: ${activeClientDist}`);
+  app.use(express.static(activeClientDist));
+} else {
+  console.warn(`[Server] WARNING: Static client build not found at ${clientDistPath} or ${fallbackClientDistPath}`);
 }
 
 // API Health Check
@@ -94,7 +99,7 @@ app.get('*', (req, res, next) => {
     return next();
   }
   if (hasClientDist) {
-    return res.sendFile(path.join(clientDistPath, 'index.html'));
+    return res.sendFile(path.join(activeClientDist, 'index.html'));
   }
   res.status(404).send('Web app client build missing. Run npm run build in client directory.');
 });
