@@ -8,8 +8,18 @@ let db: admin.firestore.Firestore;
  */
 export const initializeFirebase = (): void => {
   try {
+    if (admin.apps.length > 0) {
+      db = admin.firestore();
+      return;
+    }
+
     // Parse private key (handle escaped newlines)
     const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+
+    if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !privateKey) {
+      console.warn('⚠️ Firebase credentials incomplete in environment. Running in fallback mode.');
+      return;
+    }
 
     admin.initializeApp({
       credential: admin.credential.cert({
@@ -20,14 +30,11 @@ export const initializeFirebase = (): void => {
     });
 
     db = admin.firestore();
-    
-    // Configure Firestore to ignore undefined properties
     db.settings({ ignoreUndefinedProperties: true });
     
     console.log('✅ Firebase initialized successfully');
   } catch (error) {
-    console.error('❌ Firebase initialization failed:', error);
-    throw error;
+    console.warn('⚠️ Firebase initialization warning (running in fallback mode):', error instanceof Error ? error.message : error);
   }
 };
 
