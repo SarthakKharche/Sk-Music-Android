@@ -838,7 +838,7 @@ const Player: React.FC = () => {
           </div>
 
           {/* MOBILE SPOTIFY SOLID FLOATING MINI-PLAYER CARD (Solid #181818, Icon-only play button) */}
-          <div className="md:hidden fixed bottom-[58px] left-2 right-2 z-50 pointer-events-auto bg-[#181818] border border-white/10 rounded-xl shadow-2xl overflow-hidden">
+          <div className="md:hidden fixed bottom-[68px] left-2 right-2 z-[9999] pointer-events-auto bg-[#181818] border border-white/10 rounded-xl shadow-2xl overflow-hidden">
             {/* Top Attached Thin Progress Line */}
             <div className="w-full h-[3px] bg-white/15 relative">
               <div 

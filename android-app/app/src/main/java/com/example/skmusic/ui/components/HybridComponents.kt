@@ -35,14 +35,18 @@ import com.example.skmusic.player.MusicPlaybackService
 fun PwaWebViewContainer(
     baseUrl: String,
     modifier: Modifier = Modifier,
-    onTokenExtracted: (String) -> Unit
+    onTokenExtracted: (String) -> Unit,
+    onWebViewCreated: (WebView) -> Unit = {}
 ) {
     val context = LocalContext.current
-    var webViewRef by remember { mutableStateOf<WebView?>(null) }
 
     AndroidView(
         factory = { ctx ->
             WebView(ctx).apply {
+                layoutParams = android.view.ViewGroup.LayoutParams(
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                )
                 settings.javaScriptEnabled = true
                 settings.domStorageEnabled = true
                 settings.databaseEnabled = true
@@ -53,6 +57,15 @@ fun PwaWebViewContainer(
                 }
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
                     WebView.setWebContentsDebuggingEnabled(true)
+                }
+
+                // Custom Chrome User-Agent so Google OAuth allows login directly inside WebView
+                settings.userAgentString = "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
+
+                webChromeClient = object : android.webkit.WebChromeClient() {
+                    override fun onPermissionRequest(request: android.webkit.PermissionRequest?) {
+                        request?.grant(request.resources)
+                    }
                 }
 
                 webViewClient = object : WebViewClient() {
@@ -83,6 +96,23 @@ fun PwaWebViewContainer(
                         view?.loadDataWithBaseURL(null, errorHtml, "text/html", "UTF-8", null)
                     }
 
+                    @android.annotation.TargetApi(android.os.Build.VERSION_CODES.M)
+                    override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: android.webkit.WebResourceError?) {
+                        super.onReceivedError(view, request, error)
+                        if (request?.isForMainFrame == true) {
+                            val failingUrl = request.url?.toString() ?: ""
+                            val description = error?.description?.toString() ?: "Unknown error"
+                            val errorCode = error?.errorCode ?: 0
+                            val errorHtml = "<html><body style='background:#121212;color:white;padding:20px;font-family:sans-serif;'>" +
+                                    "<h2 style='color:#ff5555;'>Failed to load page</h2>" +
+                                    "<p><b>URL:</b> $failingUrl</p>" +
+                                    "<p><b>Error:</b> $description (code $errorCode)</p>" +
+                                    "<button onclick='location.reload()' style='padding:10px 20px;background:#1DB954;border:none;border-radius:20px;color:black;font-weight:bold;'>Retry</button>" +
+                                    "</body></html>"
+                            view?.loadDataWithBaseURL(null, errorHtml, "text/html", "UTF-8", null)
+                        }
+                    }
+
                     override fun onPageFinished(view: WebView?, url: String?) {
                         super.onPageFinished(view, url)
                         // Inject script to extract token from PWA localStorage if present
@@ -97,7 +127,7 @@ fun PwaWebViewContainer(
                     }
                 }
                 loadUrl(baseUrl)
-                webViewRef = this
+                onWebViewCreated(this)
             }
         },
         update = { webView ->
@@ -114,6 +144,7 @@ fun NativeMiniPlayerBar(
     onTogglePlayPause: () -> Unit,
     onNext: () -> Unit,
     onPrevious: () -> Unit,
+    onExpandFullscreen: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     AnimatedVisibility(
@@ -132,6 +163,7 @@ fun NativeMiniPlayerBar(
                     .fillMaxWidth()
                     .padding(horizontal = 8.dp, vertical = 4.dp)
                     .height(64.dp)
+                    .clickable { onExpandFullscreen() }
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
