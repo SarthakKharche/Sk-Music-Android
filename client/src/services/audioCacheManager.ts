@@ -86,28 +86,6 @@ class AudioCacheManager {
     const streamUrl = `${baseUrl}/audio/saavn-search?query=${searchQuery}&trackId=${encodeURIComponent(track.id)}`;
 
     console.log('[AUDIO URL] Returning native HTML5 audio stream URL for background playback:', cleanTitle, streamUrl);
-    console.log('[WEB] ACTUAL PLAY ENTRY for track:', cleanTitle);
-    console.log('[WEB] window.AndroidPlayer object =', typeof window !== 'undefined' ? (window as any).AndroidPlayer : undefined);
-    console.log('[WEB] playTrackNative exists =', typeof window !== 'undefined' && (window as any).AndroidPlayer ? typeof (window as any).AndroidPlayer.playTrackNative : 'N/A');
-
-    if (typeof window !== 'undefined' && (window as any).AndroidPlayer) {
-      try {
-        console.log('[WEB] Calling native bridge from getAudioUrl for:', cleanTitle);
-        (window as any).AndroidPlayer.playTrackNative(JSON.stringify({
-          id: track.id,
-          name: cleanTitle,
-          artistName: primaryArtist || 'SK Music',
-          artworkUrl: (track.album as any)?.imageUrl || '',
-          audioUrl: streamUrl,
-          durationMs: (track.durationMs || 180000)
-        }));
-      } catch (bridgeErr) {
-        console.warn('[WEB] Failed to invoke AndroidPlayer.playTrackNative from getAudioUrl:', bridgeErr);
-      }
-    } else {
-      console.warn('[WEB] window.AndroidPlayer IS MISSING AT RUNTIME IN getAudioUrl!');
-    }
-
     return streamUrl;
   }
 
