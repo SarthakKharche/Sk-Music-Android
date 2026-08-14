@@ -569,14 +569,30 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           try {
             navigator.mediaSession.metadata = new MediaMetadata({
               title: track.name,
-              artist: track.artists?.map((a) => a.name).join(', ') || 'SK Music',
+              artist: track.artists ? track.artists.map((a) => a.name).join(', ') : 'SK Music',
               album: track.album?.name || 'SK Music',
-              artwork: [
-                { src: track.album?.imageUrl || '/pwa-192x192.png', sizes: '192x192', type: 'image/png' },
-                { src: track.album?.imageUrl || '/pwa-512x512.png', sizes: '512x512', type: 'image/png' },
-              ],
+              artwork: track.album?.imageUrl ? [{ src: track.album.imageUrl, sizes: '300x300', type: 'image/jpeg' }] : [],
             });
+            navigator.mediaSession.playbackState = 'playing';
           } catch {}
+        }
+
+        // Directly invoke native Android Media3 service via JavascriptInterface
+        if (typeof window !== 'undefined' && (window as any).AndroidPlayer) {
+          try {
+            const coverUrl = (track.album as any)?.imageUrl || (track.album as any)?.images?.[0]?.url || '';
+            console.log('[NativeBridge] Direct call to AndroidPlayer.playTrackNative for:', track.name);
+            (window as any).AndroidPlayer.playTrackNative(JSON.stringify({
+              id: track.id,
+              name: track.name,
+              artistName: track.artists ? track.artists.map((a: any) => a.name).join(', ') : 'SK Music',
+              artworkUrl: coverUrl,
+              audioUrl: url,
+              durationMs: (track.durationMs || 180000)
+            }));
+          } catch (bridgeErr) {
+            console.warn('[NativeBridge] Failed to invoke AndroidPlayer.playTrackNative:', bridgeErr);
+          }
         }
 
         setState((prev) => ({
