@@ -258,6 +258,29 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   }, [state.currentTrack, state.isPlaying]);
 
   /**
+   * Listen for native Android Media Control events via window.onAndroidPlayerCommand
+   */
+  useEffect(() => {
+    (window as any).onAndroidPlayerCommand = (command: string) => {
+      console.log('[WEB] Received native Android command:', command);
+      switch (command) {
+        case 'PAUSE':
+          pause();
+          break;
+        case 'RESUME':
+          resume();
+          break;
+        case 'NEXT':
+          next();
+          break;
+        case 'PREVIOUS':
+          previous();
+          break;
+      }
+    };
+  }, []);
+
+  /**
    * Initialize audio element with background & lockscreen playback permissions
    */
   useEffect(() => {
@@ -286,18 +309,11 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       if (state.currentTrack) {
         updateMediaSession(state.currentTrack, true, audio.duration, audio.currentTime);
       }
-      // Post native Android media notification via JavascriptInterface
-      if (typeof window !== 'undefined' && (window as any).AndroidPlayer && state.currentTrack) {
+      if (typeof window !== 'undefined' && (window as any).AndroidPlayer) {
         try {
-          const coverUrl = (state.currentTrack.album as any)?.imageUrl || (state.currentTrack.album as any)?.images?.[0]?.url || '';
-          (window as any).AndroidPlayer.playTrackNative(JSON.stringify({
-            id: state.currentTrack.id,
-            name: state.currentTrack.name,
-            artistName: state.currentTrack.artists ? state.currentTrack.artists.map((a: any) => a.name).join(', ') : 'SK Music',
-            artworkUrl: coverUrl,
-            audioUrl: audio.src,
-            durationMs: (audio.duration || 180) * 1000
-          }));
+          if ((window as any).AndroidPlayer.resumeTrackNative) {
+            (window as any).AndroidPlayer.resumeTrackNative();
+          }
         } catch {}
       }
     });
@@ -306,6 +322,13 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       setState((prev) => ({ ...prev, isPlaying: false }));
       if (state.currentTrack) {
         updateMediaSession(state.currentTrack, false, audio.duration, audio.currentTime);
+      }
+      if (typeof window !== 'undefined' && (window as any).AndroidPlayer) {
+        try {
+          if ((window as any).AndroidPlayer.pauseTrackNative) {
+            (window as any).AndroidPlayer.pauseTrackNative();
+          }
+        } catch {}
       }
     });
 
@@ -584,8 +607,11 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
         if (typeof window !== 'undefined' && (window as any).AndroidPlayer) {
           try {
-            const coverUrl = (track.album as any)?.imageUrl || (track.album as any)?.images?.[0]?.url || '';
-            console.log('[WEB] Calling playTrackNative for:', track.name);
+            let coverUrl = (track.album as any)?.imageUrl || (track.album as any)?.images?.[0]?.url || '';
+            if (coverUrl) {
+              coverUrl = coverUrl.replace(/w120-h120-l90-rj/g, 'w500-h500-l90-rj').replace(/120x120/g, '500x500');
+            }
+            console.log('[WEB] Calling playTrackNative for:', track.name, 'Artwork:', coverUrl);
             (window as any).AndroidPlayer.playTrackNative(JSON.stringify({
               id: track.id,
               name: track.name,

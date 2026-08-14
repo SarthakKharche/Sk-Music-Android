@@ -56,23 +56,5 @@ fun MainScreen(
                 networkManager.setAuthToken(token)
             }
         )
-
-        // Native Media3/ExoPlayer MiniPlayer overlay
-        NativeMiniPlayerBar(
-            currentTrack = currentTrack,
-            isPlaying = isPlaying,
-            onTogglePlayPause = {
-                MusicPlaybackService.instance?.togglePlayPause()
-            },
-            onNext = {
-                MusicPlaybackService.instance?.skipToNext()
-            },
-            onPrevious = {
-                MusicPlaybackService.instance?.skipToPrevious()
-            },
-            modifier = Modifier
-                .align(androidx.compose.ui.Alignment.BottomCenter)
-                .padding(bottom = 60.dp)
-        )
     }
 }

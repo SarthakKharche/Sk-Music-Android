@@ -52,6 +52,12 @@ fun PwaWebViewContainer(
                 settings.databaseEnabled = true
                 settings.allowFileAccess = true
                 settings.setSupportZoom(false)
+                
+                // Disable caching to prevent stale Vercel PWA bundle caching
+                settings.cacheMode = android.webkit.WebSettings.LOAD_NO_CACHE
+                clearCache(true)
+                clearHistory()
+
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
                     settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
                 }
@@ -62,14 +68,101 @@ fun PwaWebViewContainer(
                 // Custom Chrome User-Agent so Google OAuth allows login directly inside WebView
                 settings.userAgentString = "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
 
+                webChromeClient = object : android.webkit.WebChromeClient() {
+                    override fun onConsoleMessage(consoleMessage: android.webkit.ConsoleMessage?): Boolean {
+                        consoleMessage?.let {
+                            android.util.Log.d("HybridComponents", "[WEB_CONSOLE] ${it.sourceId()}:${it.lineNumber()} -> ${it.message()}")
+                        }
+                        return super.onConsoleMessage(consoleMessage)
+                    }
+                }
+
+                activeWebView = this
+
+                addJavascriptInterface(object {
+                    @android.webkit.JavascriptInterface
+                    fun playTrackNative(jsonTrack: String) {
+                        try {
+                            android.util.Log.d("AndroidPlayerBridge", "==============================================")
+                            android.util.Log.d("AndroidPlayerBridge", "[BRIDGE] playTrackNative RECEIVED: $jsonTrack")
+                            
+                            val serviceIntent = Intent().apply {
+                                setClassName(ctx.packageName, "com.example.skmusic.player.MusicPlaybackService")
+                                action = "ACTION_PLAY_TRACK"
+                                putExtra("EXTRA_JSON_TRACK", jsonTrack)
+                            }
+                            
+                            android.util.Log.d("AndroidPlayerBridge", "[BRIDGE] Calling ContextCompat.startForegroundService for Component: ${serviceIntent.component}")
+                            val comp = androidx.core.content.ContextCompat.startForegroundService(ctx, serviceIntent)
+                            android.util.Log.d("AndroidPlayerBridge", "[BRIDGE] startForegroundService returned ComponentName: $comp")
+                            android.util.Log.d("AndroidPlayerBridge", "==============================================")
+                        } catch (e: Throwable) {
+                            android.util.Log.e("AndroidPlayerBridge", "[BRIDGE_ERROR] CRITICAL: Failed to start MusicPlaybackService!", e)
+                        }
+                    }
+
+                    @android.webkit.JavascriptInterface
+                    fun pauseTrackNative() {
+                        try {
+                            android.util.Log.d("AndroidPlayerBridge", "[BRIDGE] pauseTrackNative RECEIVED")
+                            val serviceIntent = Intent().apply {
+                                setClassName(ctx.packageName, "com.example.skmusic.player.MusicPlaybackService")
+                                action = "ACTION_PAUSE"
+                            }
+                            ctx.startService(serviceIntent)
+                        } catch (e: Throwable) {
+                            android.util.Log.e("AndroidPlayerBridge", "[BRIDGE_ERROR] Failed to send pause command!", e)
+                        }
+                    }
+
+                    @android.webkit.JavascriptInterface
+                    fun resumeTrackNative() {
+                        try {
+                            android.util.Log.d("AndroidPlayerBridge", "[BRIDGE] resumeTrackNative RECEIVED")
+                            val serviceIntent = Intent().apply {
+                                setClassName(ctx.packageName, "com.example.skmusic.player.MusicPlaybackService")
+                                action = "ACTION_RESUME"
+                            }
+                            ctx.startService(serviceIntent)
+                        } catch (e: Throwable) {
+                            android.util.Log.e("AndroidPlayerBridge", "[BRIDGE_ERROR] Failed to send resume command!", e)
+                        }
+                    }
+
+                    @android.webkit.JavascriptInterface
+                    fun togglePlayPauseNative() {
+                        try {
+                            android.util.Log.d("AndroidPlayerBridge", "[BRIDGE] togglePlayPauseNative RECEIVED")
+                            val serviceIntent = Intent().apply {
+                                setClassName(ctx.packageName, "com.example.skmusic.player.MusicPlaybackService")
+                                action = "ACTION_TOGGLE_PLAY"
+                            }
+                            ctx.startService(serviceIntent)
+                        } catch (e: Throwable) {
+                            android.util.Log.e("AndroidPlayerBridge", "[BRIDGE_ERROR] Failed to toggle play/pause!", e)
+                        }
+                    }
+                }, "AndroidPlayer")
+
                 webViewClient = object : WebViewClient() {
                     override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                         val url = request?.url?.toString() ?: return false
+                        android.util.Log.d("HybridComponents", "[SHOULD_OVERRIDE] Loading URL: $url")
+                        
                         if (url.startsWith("https://accounts.spotify.com")) {
                             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
                             ctx.startActivity(intent)
                             return true
                         }
+                        
+                        // Prevent WebView from leaving EC2 server to Vercel upon Google OAuth callback
+                        if (url.contains("sk-music-xi.vercel.app")) {
+                            val rewrittenUrl = url.replace("https://sk-music-xi.vercel.app", baseUrl.removeSuffix("/"))
+                            android.util.Log.d("HybridComponents", "[REDIRECT_REWRITE] Rewriting Vercel redirect to EC2: $rewrittenUrl")
+                            view?.loadUrl(rewrittenUrl)
+                            return true
+                        }
+
                         if (url.contains("token=")) {
                             val token = Uri.parse(url).getQueryParameter("token")
                             if (!token.isNullOrEmpty()) {
@@ -109,6 +202,30 @@ fun PwaWebViewContainer(
 
                     override fun onPageFinished(view: WebView?, url: String?) {
                         super.onPageFinished(view, url)
+                        android.util.Log.d("HybridComponents", "[WEBVIEW] Loaded URL: $url")
+                        
+                        // Force unregister stale Service Worker cache if pointing to old Vercel deployment
+                        view?.evaluateJavascript(
+                            """
+                            if ('serviceWorker' in navigator) {
+                                navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                                    for (let reg of registrations) {
+                                        console.log('[PWA_UNREGISTER] Unregistering service worker:', reg);
+                                        reg.unregister();
+                                    }
+                                });
+                            }
+                            if ('caches' in window) {
+                                caches.keys().then(function(names) {
+                                    for (let name of names) {
+                                        console.log('[PWA_CACHE_PURGE] Deleting cache:', name);
+                                        caches.delete(name);
+                                    }
+                                });
+                            }
+                            """.trimIndent(), null
+                        )
+
                         // Inject script to extract token from PWA localStorage if present
                         view?.evaluateJavascript(
                             "(function() { return localStorage.getItem('authToken'); })();"
@@ -214,5 +331,13 @@ fun NativeMiniPlayerBar(
                 }
             }
         }
+    }
+}
+
+var activeWebView: WebView? = null
+
+fun sendNativeEventToJS(action: String) {
+    activeWebView?.post {
+        activeWebView?.evaluateJavascript("window.onAndroidPlayerCommand && window.onAndroidPlayerCommand('$action');", null)
     }
 }
