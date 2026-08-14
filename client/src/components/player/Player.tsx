@@ -263,14 +263,13 @@ const Player: React.FC = () => {
       return;
     }
 
-    if (playerRef.current && playerRef.current.requestFullscreen) {
-      try {
-        await playerRef.current.requestFullscreen();
-        setIsFullscreen(true);
-        return;
-      } catch {
-        // Fallback to React state fullscreen for mobile WebViews
+    // Try HTML5 Fullscreen API, but fallback cleanly to React state drawer if unsupported in WebView
+    try {
+      if (playerRef.current && typeof playerRef.current.requestFullscreen === 'function') {
+        await playerRef.current.requestFullscreen().catch(() => {});
       }
+    } catch (e) {
+      // Ignored: WebView environment fallback
     }
     setIsFullscreen(true);
   };
