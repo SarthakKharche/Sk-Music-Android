@@ -14,7 +14,7 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      callbackURL: process.env.GOOGLE_REDIRECT_URI || 'https://sk-music-xi.vercel.app/api/auth/google/callback',
+      callbackURL: process.env.GOOGLE_REDIRECT_URI || '/api/auth/google/callback',
     },
     async (accessToken: string, refreshToken: string, profile: any, done: any) => {
       try {
