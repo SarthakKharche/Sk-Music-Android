@@ -578,10 +578,14 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         }
 
         // Directly invoke native Android Media3 service via JavascriptInterface
+        console.log('[WEB] ACTUAL PLAY FUNCTION REACHED for track:', track.name);
+        console.log('[WEB] window.AndroidPlayer object =', typeof window !== 'undefined' ? (window as any).AndroidPlayer : undefined);
+        console.log('[WEB] playTrackNative exists =', typeof window !== 'undefined' && (window as any).AndroidPlayer ? typeof (window as any).AndroidPlayer.playTrackNative : 'N/A');
+
         if (typeof window !== 'undefined' && (window as any).AndroidPlayer) {
           try {
             const coverUrl = (track.album as any)?.imageUrl || (track.album as any)?.images?.[0]?.url || '';
-            console.log('[NativeBridge] Direct call to AndroidPlayer.playTrackNative for:', track.name);
+            console.log('[WEB] Calling playTrackNative for:', track.name);
             (window as any).AndroidPlayer.playTrackNative(JSON.stringify({
               id: track.id,
               name: track.name,
@@ -591,8 +595,10 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
               durationMs: (track.durationMs || 180000)
             }));
           } catch (bridgeErr) {
-            console.warn('[NativeBridge] Failed to invoke AndroidPlayer.playTrackNative:', bridgeErr);
+            console.warn('[WEB] Failed to invoke AndroidPlayer.playTrackNative:', bridgeErr);
           }
+        } else {
+          console.warn('[WEB] window.AndroidPlayer IS MISSING AT RUNTIME!');
         }
 
         setState((prev) => ({
