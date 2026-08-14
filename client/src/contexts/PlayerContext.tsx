@@ -211,10 +211,28 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         title: track.name,
         artist: track.artists ? track.artists.map((a) => a.name).join(', ') : 'SK Music',
         album: track.album?.name || 'SK Music',
-        artwork: coverUrl ? [{ src: coverUrl, sizes: '300x300', type: 'image/jpeg' }] : [],
+        artwork: coverUrl ? [
+          { src: coverUrl, sizes: '300x300', type: 'image/jpeg' },
+          { src: coverUrl, sizes: '512x512', type: 'image/png' }
+        ] : [],
       });
 
       navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+
+      // Register system media control action handlers (Headset/Bluetooth, Lockscreen, Notification, Android Auto)
+      try {
+        navigator.mediaSession.setActionHandler('play', () => resume());
+        navigator.mediaSession.setActionHandler('pause', () => pause());
+        navigator.mediaSession.setActionHandler('previoustrack', () => previous());
+        navigator.mediaSession.setActionHandler('nexttrack', () => next());
+        navigator.mediaSession.setActionHandler('seekto', (details) => {
+          if (details.seekTime !== undefined && details.seekTime !== null) {
+            seek(details.seekTime);
+          }
+        });
+      } catch (err) {
+        console.warn('ActionHandler error:', err);
+      }
 
       if (durationSec > 0 && 'setPositionState' in navigator.mediaSession) {
         try {
